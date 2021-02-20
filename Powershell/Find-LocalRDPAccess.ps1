@@ -1,4 +1,351 @@
-﻿function Find-LocalRDPAccess {
+function Get-DomainSearcher {
+<#
+    .SYNOPSIS
+
+        Helper used by various functions that takes an ADSpath and
+        domain specifier and builds the correct ADSI searcher object.
+
+    .PARAMETER Domain
+
+        The domain to use for the query, defaults to the current domain.
+
+    .PARAMETER DomainController
+
+        Domain controller to reflect LDAP queries through.
+
+    .PARAMETER ADSpath
+
+        The LDAP source to search through, e.g. "LDAP://OU=secret,DC=testlab,DC=local"
+        Useful for OU queries.
+
+    .PARAMETER ADSprefix
+
+        Prefix to set for the searcher (like "CN=Sites,CN=Configuration")
+
+    .PARAMETER PageSize
+
+        The PageSize to set for the LDAP searcher object.
+
+    .EXAMPLE
+
+        PS C:\> Get-DomainSearcher -Domain testlab.local
+
+    .EXAMPLE
+
+        PS C:\> Get-DomainSearcher -Domain testlab.local -DomainController SECONDARY.dev.testlab.local
+#>
+
+    [CmdletBinding()]
+    param(
+        [String]
+        $Domain,
+
+        [String]
+        $DomainController,
+
+        [String]
+        $ADSpath,
+
+        [String]
+        $ADSprefix,
+
+        [ValidateRange(1,10000)] 
+        [Int]
+        $PageSize = 200
+    )
+
+    if(!$Domain) {
+        $Domain = (Get-NetDomain).name
+    }
+    else {
+        if(!$DomainController) {
+            try {
+                # if there's no -DomainController specified, try to pull the primary DC
+                # to reflect queries through
+                $DomainController = ((Get-NetDomain).PdcRoleOwner).Name
+            }
+            catch {
+                throw "Get-DomainSearcher: Error in retrieving PDC for current domain"
+            }
+        }
+    }
+
+    $SearchString = "LDAP://"
+
+    if($DomainController) {
+        $SearchString += $DomainController + "/"
+    }
+    if($ADSprefix) {
+        $SearchString += $ADSprefix + ","
+    }
+
+    if($ADSpath) {
+        if($ADSpath -like "GC://*") {
+            # if we're searching the global catalog
+            $DistinguishedName = $AdsPath
+            $SearchString = ""
+        }
+        else {
+            if($ADSpath -like "LDAP://*") {
+                $ADSpath = $ADSpath.Substring(7)
+            }
+            $DistinguishedName = $ADSpath
+        }
+    }
+    else {
+        $DistinguishedName = "DC=$($Domain.Replace('.', ',DC='))"
+    }
+
+    $SearchString += $DistinguishedName
+    Write-Verbose "Get-DomainSearcher search string: $SearchString"
+
+    $Searcher = New-Object System.DirectoryServices.DirectorySearcher([ADSI]$SearchString)
+    $Searcher.PageSize = $PageSize
+    $Searcher
+}
+
+function Get-NetDomain {
+<#
+    .SYNOPSIS
+
+        Returns a given domain object.
+
+    .PARAMETER Domain
+
+        The domain name to query for, defaults to the current domain.
+
+    .EXAMPLE
+
+        PS C:\> Get-NetDomain -Domain testlab.local
+
+    .LINK
+
+        http://social.technet.microsoft.com/Forums/scriptcenter/en-US/0c5b3f83-e528-4d49-92a4-dee31f4b481c/finding-the-dn-of-the-the-domain-without-admodule-in-powershell?forum=ITCG
+#>
+
+    [CmdletBinding()]
+    param(
+        [Parameter(ValueFromPipeline=$True)]
+        [String]
+        $Domain
+    )
+
+    process {
+        if($Domain) {
+            $DomainContext = New-Object System.DirectoryServices.ActiveDirectory.DirectoryContext('Domain', $Domain)
+            try {
+                [System.DirectoryServices.ActiveDirectory.Domain]::GetDomain($DomainContext)
+            }
+            catch {
+                Write-Warning "The specified domain $Domain does not exist, could not be contacted, or there isn't an existing trust."
+                $Null
+            }
+        }
+        else {
+            [System.DirectoryServices.ActiveDirectory.Domain]::GetCurrentDomain()
+        }
+    }
+}
+
+
+
+function Get-NetComputer {
+<#
+    .SYNOPSIS
+
+        This function utilizes adsisearcher to query the current AD context
+        for current computer objects. Based off of Carlos Perez's Audit.psm1
+        script in Posh-SecMod (link below).
+
+    .PARAMETER ComputerName
+
+        Return computers with a specific name, wildcards accepted.
+
+    .PARAMETER SPN
+
+        Return computers with a specific service principal name, wildcards accepted.
+
+    .PARAMETER OperatingSystem
+
+        Return computers with a specific operating system, wildcards accepted.
+
+    .PARAMETER ServicePack
+
+        Return computers with a specific service pack, wildcards accepted.
+
+    .PARAMETER Filter
+
+        A customized ldap filter string to use, e.g. "(description=*admin*)"
+
+    .PARAMETER Printers
+
+        Switch. Return only printers.
+
+    .PARAMETER Ping
+
+        Switch. Ping each host to ensure it's up before enumerating.
+
+    .PARAMETER FullData
+
+        Switch. Return full computer objects instead of just system names (the default).
+
+    .PARAMETER Domain
+
+        The domain to query for computers, defaults to the current domain.
+
+    .PARAMETER DomainController
+
+        Domain controller to reflect LDAP queries through.
+
+    .PARAMETER ADSpath
+
+        The LDAP source to search through, e.g. "LDAP://OU=secret,DC=testlab,DC=local"
+        Useful for OU queries.
+
+    .PARAMETER Unconstrained
+
+        Switch. Return computer objects that have unconstrained delegation.
+
+    .PARAMETER PageSize
+
+        The PageSize to set for the LDAP searcher object.
+
+    .EXAMPLE
+
+        PS C:\> Get-NetComputer
+        
+        Returns the current computers in current domain.
+
+    .EXAMPLE
+
+        PS C:\> Get-NetComputer -SPN mssql*
+        
+        Returns all MS SQL servers on the domain.
+
+    .EXAMPLE
+
+        PS C:\> Get-NetComputer -Domain testing
+        
+        Returns the current computers in 'testing' domain.
+
+    .EXAMPLE
+
+        PS C:\> Get-NetComputer -Domain testing -FullData
+        
+        Returns full computer objects in the 'testing' domain.
+
+    .LINK
+
+        https://github.com/darkoperator/Posh-SecMod/blob/master/Audit/Audit.psm1
+#>
+
+    [CmdletBinding()]
+    Param (
+        [Parameter(ValueFromPipeline=$True)]
+        [Alias('HostName')]
+        [String]
+        $ComputerName = '*',
+
+        [String]
+        $SPN,
+
+        [String]
+        $OperatingSystem,
+
+        [String]
+        $ServicePack,
+
+        [String]
+        $Filter,
+
+        [Switch]
+        $Printers,
+
+        [Switch]
+        $Ping,
+
+        [Switch]
+        $FullData,
+
+        [String]
+        $Domain,
+
+        [String]
+        $DomainController,
+
+        [String]
+        $ADSpath,
+
+        [Switch]
+        $Unconstrained,
+
+        [ValidateRange(1,10000)] 
+        [Int]
+        $PageSize = 200
+    )
+
+    begin {
+        # so this isn't repeated if users are passed on the pipeline
+        $CompSearcher = Get-DomainSearcher -Domain $Domain -DomainController $DomainController -ADSpath $ADSpath -PageSize $PageSize
+    }
+
+    process {
+
+        if ($CompSearcher) {
+
+            # if we're checking for unconstrained delegation
+            if($Unconstrained) {
+                Write-Verbose "Searching for computers with for unconstrained delegation"
+                $Filter += "(userAccountControl:1.2.840.113556.1.4.803:=524288)"
+            }
+            # set the filters for the seracher if it exists
+            if($Printers) {
+                Write-Verbose "Searching for printers"
+                # $CompSearcher.filter="(&(objectCategory=printQueue)$Filter)"
+                $Filter += "(objectCategory=printQueue)"
+            }
+            if($SPN) {
+                Write-Verbose "Searching for computers with SPN: $SPN"
+                $Filter += "(servicePrincipalName=$SPN)"
+            }
+            if($OperatingSystem) {
+                $Filter += "(operatingsystem=$OperatingSystem)"
+            }
+            if($ServicePack) {
+                $Filter += "(operatingsystemservicepack=$ServicePack)"
+            }
+
+            $CompSearcher.filter = "(&(sAMAccountType=805306369)(dnshostname=$ComputerName)$Filter)"
+
+            try {
+
+                $CompSearcher.FindAll() | Where-Object {$_} | ForEach-Object {
+                    $Up = $True
+                    if($Ping) {
+                        # TODO: how can these results be piped to ping for a speedup?
+                        $Up = Test-Connection -Count 1 -Quiet -ComputerName $_.properties.dnshostname
+                    }
+                    if($Up) {
+                        # return full data objects
+                        if ($FullData) {
+                            # convert/process the LDAP fields for each result
+                            Convert-LDAPProperty -Properties $_.Properties
+                        }
+                        else {
+                            # otherwise we're just returning the DNS host name
+                            $_.properties.dnshostname
+                        }
+                    }
+                }
+            }
+            catch {
+                Write-Warning "Error: $_"
+            }
+        }
+    }
+}
+
+function Find-LocalRDPAccess {
 <#
     .SYNOPSIS
 
